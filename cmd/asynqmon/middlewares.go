@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/subtle"
 	"fmt"
 	"net"
 	"net/http"
@@ -57,4 +58,18 @@ func loggingMiddleware(h http.Handler) http.Handler {
 			host, username, time.Now().Format("02/Jan/2006:15:04:05 -0700"),
 			r.Method, r.URL, r.Proto, rw.status, size)
 	})
+}
+
+func basicAuthMiddleware(username, password string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			user, pass, ok := r.BasicAuth()
+			if !ok || subtle.ConstantTimeCompare([]byte(user), []byte(username)) != 1 || subtle.ConstantTimeCompare([]byte(pass), []byte(password)) != 1 {
+				w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+				http.Error(w, "Unauthorized.", http.StatusUnauthorized)
+			} else {
+				next.ServeHTTP(w, r)
+			}
+		})
+	}
 }

@@ -45,6 +45,10 @@ type Config struct {
 
 	// Args are the positional (non-flag) command line arguments
 	Args []string
+
+	// auth
+	AuthUsername string
+	AuthPassword string
 }
 
 // parseFlags parses the command-line arguments provided to the program.
@@ -72,7 +76,9 @@ func parseFlags(progname string, args []string) (cfg *Config, output string, err
 	flags.BoolVar(&conf.EnableMetricsExporter, "enable-metrics-exporter", getEnvOrDefaultBool("ENABLE_METRICS_EXPORTER", false), "enable prometheus metrics exporter to expose queue metrics")
 	flags.StringVar(&conf.PrometheusServerAddr, "prometheus-addr", getEnvDefaultString("PROMETHEUS_ADDR", ""), "address of prometheus server to query time series")
 	flags.BoolVar(&conf.ReadOnly, "read-only", getEnvOrDefaultBool("READ_ONLY", false), "restrict to read-only mode")
-
+	// auth-username & auth-password
+	flags.StringVar(&conf.AuthUsername, "auth-username", getEnvDefaultString("AUTH_USERNAME", ""), "auth username")
+	flags.StringVar(&conf.AuthPassword, "auth-password", getEnvDefaultString("AUTH_PASSWORD", ""), "auth password")
 	err = flags.Parse(args)
 	if err != nil {
 		return nil, buf.String(), err
@@ -160,7 +166,11 @@ func main() {
 		AllowedMethods: []string{"GET", "POST", "DELETE"},
 	})
 	mux := http.NewServeMux()
-	mux.Handle("/", c.Handler(h))
+	var hanler http.Handler = h
+	if cfg.AuthUsername != "" && cfg.AuthPassword != "" {
+		hanler = basicAuthMiddleware(cfg.AuthUsername, cfg.AuthPassword)(c.Handler(h))
+	}
+	mux.Handle("/", c.Handler(hanler))
 	if cfg.EnableMetricsExporter {
 		// Using NewPedanticRegistry here to test the implementation of Collectors and Metrics.
 		reg := prometheus.NewPedanticRegistry()
