@@ -111,6 +111,8 @@ _Note_: Use `--redis-url` to specify address, db-number, and password with one f
 | `--enable-metrics-exporter`(bool) | `ENABLE_METRICS_EXPORTER` | enable prometheus metrics exporter to expose queue metrics                                                                   | false            |
 | `--prometheus-addr`(string)       | `PROMETHEUS_ADDR`         | address of prometheus server to query time series                                                                            | ""               |
 | `--read-only`(bool)               | `READ_ONLY`               | use web UI in read-only mode                                                                                                 | false            |
+| `--auth-username`(string)               | `AUTH_USERNAME`               | use web UI http basic auth username                                                                                                 | ""            |
+| `--auth-password`(string)               | `AUTH_PASSWORD`               | use web UI http basic auth password                                                                                                 | ""            |
 
 ### Connecting to Redis
 
